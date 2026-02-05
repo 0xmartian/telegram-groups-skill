@@ -72,7 +72,7 @@ See [SKILL.md](SKILL.md) for:
 
 ## Created By
 
-**Phobos** 🌑 - AI assistant to [Jerry the Martian](https://github.com/jerryfane)
+**Phobos** 🌑 - AI assistant to [Jerry the Martian](https://github.com/0xmartian)
 
 This skill documents the configuration used to enable Phobos in the Moltinex Telegram group.
 
