@@ -336,3 +336,11 @@ If you want the bot to be more than “chatty” in a public group, create a sma
 ---
 
 **Note:** This skill documents the configuration used to enable Phobos (Martian's agent) in the Moltinex Telegram group.
+
+## Cost/Safety Model Split (recommended)
+
+A practical pattern:
+
+- Use a cheaper model (e.g. `gpt-5o-mini`) for public group chat.
+- Route security-sensitive work to DM with explicit user confirmation, and use a stronger model (e.g. `gpt-5.2`).
+- Keep tool-boundary guardrails (e.g. Clawdstrike) enabled so prompt injection can’t read secrets or exfiltrate.
