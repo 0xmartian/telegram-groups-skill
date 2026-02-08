@@ -138,6 +138,41 @@ gateway.reason = "Apply Telegram group configuration"
 - Use `gateway.action = "restart"` for full restart
 - Config reloads (`config.patch`) may not reinitialize Telegram plugin
 
+## Prompt Injection Hardening (recommended)
+
+If you’ve previously been hit by prompt injection from other group members, you need **enforcement**, not just “be careful.”
+
+Recommended layers:
+
+1) **Limit when the bot responds**
+   - Use `requireMention: true` for public groups.
+
+2) **Limit who can trigger dangerous actions**
+   - Use `toolsBySender` to deny dangerous tools for `"*"` and only allow them for specific user IDs.
+
+3) **Tool-boundary guardrails (strongest practical defense)**
+   - Install a guardrails layer (e.g. Clawdstrike) so even if the model is tricked, it can’t:
+     - read sensitive paths (`~/.ssh`, `~/.openclaw/credentials`, `.env`, etc.)
+     - exfiltrate to random domains (egress allowlist)
+
+Example OpenClaw plugin config (Clawdstrike):
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "clawdstrike-security": {
+        "enabled": true,
+        "config": {
+          "policy": "/home/pi/.openclaw/guardrails/clawdstrike/policy.yaml",
+          "mode": "deterministic"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Group Chat Behavior
 
 ### Message Routing
@@ -196,10 +231,16 @@ Add multiple groups to the allowlist:
 
 ## Security Considerations
 
-- `allowFrom: ["*"]` trusts all group members
-- Consider using `allowFrom: ["userid1", "userid2"]` for sensitive groups
-- Use `toolsBySender` to restrict dangerous tools
-- Set `requireMention: true` to reduce noise in large groups
+Telegram groups are **untrusted input**. If you let an agent read everything (`requireMention: false`) and trust everyone (`allowFrom: ["*"]`), you are explicitly opting into **prompt injection risk**.
+
+Minimum recommended hardening for any group with unknown members:
+
+- Prefer `requireMention: true` (reduces ambient injection / drive-by instructions)
+- Prefer an allowlist for senders (e.g. `allowFrom: ["123", "456"]`) for any sensitive bot
+- Deny dangerous tools for `"*"` by default using `toolsBySender`
+- Use a tool-boundary guardrails layer (see “Prompt Injection Hardening” below)
+
+**Rule of thumb:** if a group includes strangers, treat every message as hostile.
 
 ## Related Config
 
@@ -228,7 +269,7 @@ Add multiple groups to the allowlist:
 }
 ```
 
-## Example: Public Community Group
+## Example: Public Community Group (prompt-injection hardened)
 
 ```json
 {
@@ -239,8 +280,19 @@ Add multiple groups to the allowlist:
           "enabled": true,
           "requireMention": true,
           "allowFrom": ["*"],
-          "tools": {
-            "deny": ["exec", "gateway", "sessions_spawn"]
+
+          "toolsBySender": {
+            "*": {
+              "deny": [
+                "exec",
+                "gateway",
+                "sessions_spawn",
+                "write",
+                "edit",
+                "browser",
+                "message"
+              ]
+            }
           }
         }
       }
@@ -248,6 +300,8 @@ Add multiple groups to the allowlist:
   }
 }
 ```
+
+If you want the bot to be more than “chatty” in a public group, create a small allowlist of trusted user IDs and grant tools only to them.
 
 ---
 
